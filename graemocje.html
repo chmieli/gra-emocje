@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Trening Emocji</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  background: linear-gradient(135deg, #e0f2fe, #fce7f3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 10px;
+}
+
+.container {
+  width: 90%;
+  max-width: 420px;
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.hidden { display: none; }
+
+.card {
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.joy { background: linear-gradient(135deg,#fff7cc,#fde68a); }
+.sad { background: linear-gradient(135deg,#dbeafe,#bfdbfe); }
+.anger { background: linear-gradient(135deg,#fecaca,#fca5a5); }
+.fear { background: linear-gradient(135deg,#e9d5ff,#c4b5fd); }
+.disgust { background: linear-gradient(135deg,#dcfce7,#bbf7d0); }
+.surprise { background: linear-gradient(135deg,#f3f4f6,#e5e7eb); }
+
+button {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #f1f5f9;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #e2e8f0;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.correct {
+  background: #86efac !important;
+}
+
+.wrong {
+  background: #fca5a5 !important;
+}
+
+.next {
+  background: #4ade80;
+  color: white;
+}
+
+.progress-container {
+  background:#e2e8f0;
+  border-radius:10px;
+  height:10px;
+  margin-bottom:15px;
+}
+
+.progress-bar {
+  height:10px;
+  background:#60a5fa;
+  border-radius:10px;
+  width:0%;
+}
+
+#feedback {
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="welcome">
+  <h1>Myślisz, że umiesz rozpoznawać emocje?</h1>
+  <p>
+    Według Paula Ekmana istnieje 6 podstawowych emocji: 
+    radość, smutek, gniew, lęk, wstręt i zaskoczenie.
+  </p>
+  <p>
+    W tej krótkiej grze nauczysz się, czym te emocje są
+    oraz jak je rozpoznawać.
+  </p>
+  <p>
+    Przygotowałyśmy 18 sytuacji z życia. Do każdej z nich pasuje
+    jedna emocja.
+  </p>
+  <p>
+    Twoim zadaniem jest dopasować emocję do sytuacji.
+  </p>
+  <p>
+    Na końcu będzie krótki feedback jak Ci poszło.
+  </p>
+  <p>
+    Nic więcej Cię nie zatrzymuje, zacznijmy Grę o emocjach!
+  </p>
+
+  <button class="next" onclick="startApp()">Start ▶️</button>
+</div>
+
+<div id="intro" class="hidden">
+  <div id="emotionCard" class="card"></div>
+  <button class="next" onclick="nextEmotion()">Dalej ➡️</button>
+</div>
+
+<div id="quiz" class="hidden">
+
+  <div id="progressText"></div>
+  <div class="progress-container">
+    <div id="progressBar" class="progress-bar"></div>
+  </div>
+
+  <h3 id="question"></h3>
+  <div id="answers"></div>
+  <p id="feedback"></p>
+
+  <button id="nextBtn" class="next hidden" onclick="nextQuestion()">Dalej ➡️</button>
+</div>
+
+<div id="summary" class="hidden"></div>
+
+<div id="endScreen" class="hidden"></div>
+
+</div>
+
+<script>
+
+function startApp(){
+  document.getElementById("welcome").classList.add("hidden");
+  document.getElementById("intro").classList.remove("hidden");
+  showEmotion();
+}
+
+
+const emotions = [
+{name:"radość", class:"joy", text:"Pozytywny stan afektywny, motywuje do podtrzymania korzystnych zachowań. Wyzwalana przez osiągnięcie celu, bliskość, sukces. Związana z poczuciem spełnienia."},
+{name:"smutek", class:"sad", text:"Stan sygnalizujący utratę czegoś wartościowego. Wywołuje empatię i wsparcie u obserwatora. Wyzwalany przez stratę, separację, rozczarowanie."},
+{name:"złość", class:"anger", text:"Emocja mobilizująca zasoby do usunięcia przeszkody lub obrony. Towarzyszy jej wzrost pobudzenia sympatycznego, pojawia się gotowość do działania. Wyzwalana przez blokowanie celu, zagrożenie, niesprawiedliwość."},
+{name:"lęk", class:"fear", text:"Pierwotna emocja, która uruchamia reakcję walki, ucieczki, zastygnięcia. Kieruje uwagę na źródło zagrożenia i przygotowuje do działania. Wyzwalana przez zagrożenie dla życia lub integralności."},
+{name:"wstręt", class:"disgust", text:"Chroni przed szkodliwymi rzeczami. Pierwotnie przed spożywaniem szkodliwych substancji, aktualnie rozszerzona na sferę moralną oraz społeczną. Wyzwalana przez substancje toksyczne, naruszenie norm moralnych."},
+{name:"zaskoczenie", class:"surprise", text:"Najkrótsza z podstawowych emocji, bardzo szybko przechodzi w inną emocję. Powoduje orientację uwagi na nowy, nieznany bodziec, przez który jest wyzwalane."}
+];
+
+let i=0;
+
+function showEmotion(){
+  const e=emotions[i];
+  document.getElementById("emotionCard").className="card "+e.class;
+  document.getElementById("emotionCard").innerHTML=
+    "<h2>"+e.name+"</h2><p>"+e.text+"</p>";
+}
+
+function nextEmotion(){
+  i++;
+  if(i>=emotions.length){
+    document.getElementById("intro").classList.add("hidden");
+    document.getElementById("quiz").classList.remove("hidden");
+    startQuiz();
+  } else showEmotion();
+}
+
+const questions = [
+{t:"Kilka dni temu mój ulubiony artysta ogłosił trasę koncertową po wielu latach przerwy.",e:"radość"},
+{t:"Wczoraj wszyscy moi przyjaciele spotkali się w parku i mi o tym nie powiedzieli.",e:"smutek"},
+{t:"Mam wizytę u lekarza za 5 minut, a w centrum miasta jest ogromny korek i nie da się przejechać.",e:"złość"},
+{t:"Moja mama trafiła do szpitala w ciężkim stanie, a ja jestem na delegacji i nie mogę przy niej być.",e:"lęk"},
+{t:"W restauracji do zamówionego przeze mnie dania dodali brokuły, których nienawidzę.",e:"wstręt"},
+{t:"Moi współpracownicy przygotowali dla mnie przyjęcie niespodziankę z okazji 10 lat pracy w firmie.",e:"zaskoczenie"},
+
+{t:"Projekt w pracy, który długo realizowałam został odrzucony i odwołany.",e:"smutek"},
+{t:"Specjalnie wstał*m wcześniej rano, aby zdążyć na autobus, po czym na przystanku okazało się, że odjechał dwie minuty szybciej.",e:"złość"},
+{t:"Jest noc, idę ciemną uliczką, a za mną podąża podejrzanie wyglądająca osoba.",e:"lęk"},
+{t:"Moja ciocia zadzwoniła wieczorem poinformować mnie, że jest w ciąży z trojaczkami.",e:"zaskoczenie"},
+{t:"Moja mama kupiła mi nowe opakowanie moich ulubionych perfum, bo zauważyła, ze mi się kończą.",e:"radość"},
+{t:"Mój tata pracował w ogrodzie przed obiadem i zapomniał umyć rąk przed tym, jak usiadł przy stole.",e:"wstręt"},
+
+{t:"Wczoraj na ulicy dostał*m komplement od nieznanej mi osoby.",e:"radość"},
+{t:"Ostatnio spotkał*m moją przyjaciółkę z dzieciństwa, która wyprowadziła się na stałe do Australii, gdy miała 10 lat.",e:"zaskoczenie"},
+{t:"Prowadzę samochód, a nagle na ulicę wybiega pieszy, więc muszę szybko hamować.",e:"lęk"},
+{t:"Mój kot, który przeżył ze mną ostatnie 17 lat, zmarł wczoraj wieczorem.",e:"smutek"},
+{t:"Był*m bardzo głodn* i chciał*m zrobić szybki obiad, ale spalił mi się makaron w garnku.",e:"złość"},
+{t:"Mój brat zbiera ślimaki i żaby, których bardzo się brzydzę.",e:"wstręt"}
+];
+
+questions.sort(()=>Math.random()-0.5);
+
+let q=0, mistakes={};
+
+function updateProgress(){
+  const percent=(q/questions.length)*100;
+  document.getElementById("progressBar").style.width=percent+"%";
+  document.getElementById("progressText").innerText=
+    "Pytanie "+(q+1)+" / "+questions.length;
+}
+
+function loadQ(){
+  updateProgress();
+  document.getElementById("nextBtn").classList.add("hidden");
+
+  const cur=questions[q];
+  document.getElementById("question").innerText=cur.t;
+  document.getElementById("feedback").innerText="";
+
+  const answers=["radość","smutek","złość","lęk","wstręt","zaskoczenie"];
+  const div=document.getElementById("answers");
+  div.innerHTML="";
+
+  answers.forEach(a=>{
+    const btn=document.createElement("button");
+    btn.innerText=a;
+    btn.onclick=()=>check(a,cur,btn);
+    div.appendChild(btn);
+  });
+}
+
+function check(a,cur,clickedBtn){
+  const buttons = document.querySelectorAll("#answers button");
+
+  buttons.forEach(btn=>{
+    btn.disabled = true;
+
+    if(btn.innerText === cur.e){
+      btn.classList.add("correct");
+    }
+  });
+
+  if(a !== cur.e){
+    clickedBtn.classList.add("wrong");
+  }
+
+  const fb=document.getElementById("feedback");
+
+  if(a===cur.e){
+    fb.innerText="✔ Brawo! Poprawnie rozpoznał*ś emocję!";
+  } else{
+    fb.innerText="✖ Niestety niepoprawna odpowiedź :( Ta emocja to: "+cur.e;
+    mistakes[cur.e]=(mistakes[cur.e]||0)+1;
+  }
+
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+
+function nextQuestion(){
+  q++;
+  if(q>=questions.length) summary();
+  else loadQ();
+}
+
+function startQuiz(){ loadQ(); }
+
+function summary(){
+  document.getElementById("quiz").classList.add("hidden");
+  const s=document.getElementById("summary");
+  s.classList.remove("hidden");
+
+  let text="<h2>Podsumowanie</h2>";
+
+  if(Object.keys(mistakes).length===0){
+    text+="<p>Świetnie rozpoznajesz podstawowe emocje!</p>";
+    text+="<p>Nie popełnił*ś żadnego błędu.</p>";
+    text+="<p>To oznacza, że dobrze rozumiesz sytuacje i ich nacechowanie emocjonalne.</p>";
+    text+="<p>Oby tak dalej :)</p>";
+  } else{
+    let worst=Object.keys(mistakes).reduce((a,b)=>mistakes[a]>mistakes[b]?a:b);
+    text+="<p>Emocja, którą najtrudniej było Ci rozpoznać to: <b>"+worst+"</b></p>";
+    text+="<p>Emocje mogą być do siebie bardzo podobne i łatwo je pomylić.</p>";
+    text+="<p>To nie jest nic złego, to tylko oznacza, że możesz się jeszcze wiele nauczyć!</p>";
+    text+="<p>Nadal możesz dążyć do lepszego zrozumienia emocji, powodzenia :)</p>";
+  }
+
+  text += `<button class="next" onclick="showEnd()">Dalej ➡️</button>`;
+
+  s.innerHTML=text;
+}
+
+function showEnd(){
+  document.getElementById("summary").classList.add("hidden");
+  const end=document.getElementById("endScreen");
+  end.classList.remove("hidden");
+
+  end.innerHTML=`
+    <h2>Dziękujemy za udział w grze!</h2>
+    <p>
+      Mamy nadzieję, że to ćwiczenie pomogło Ci lepiej rozpoznawać i rozumieć
+      emocje swoje i innych.
+    </p>
+    <p>
+      Pamiętaj, że emocje to ważny element codziennego funkcjonowania. Od nich zależą
+      Twoje relacje, decyzje oraz sposób myślenia. Towarzyszą nam one
+      zawsze niezależnie od sytuacji.
+    </p>
+    <p>
+      Świadomość emocjonalna to umiejętność, którą warto rozwijać każdego dnia.
+      Lepsze zrozumienie emocji pozwoli Ci zrozumieć siebie.
+    </p>
+    <p>
+      Gra pozostaje dostępna do ponownego wzięcia udziału!
+      Emocje czekają na rozpoznanie!
+    </p>
+    <button class="next" onclick="location.reload()">Zacznij od nowa 🔄</button>
+  `;
+}
+</script>
+
+</body>
+</html>
